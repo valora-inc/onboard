@@ -6,6 +6,12 @@ import {
 
 import walletConnectIcon from '../wallet-icons/icon-wallet-connect'
 
+import { get } from 'svelte/store'
+
+import {
+  app,
+} from '../../../stores'
+
 function walletConnect(
   options: WalletConnectOptions & { networkId: number }
 ): WalletModule {
@@ -20,6 +26,8 @@ function walletConnect(
     networkId
   } = options
 
+  const pollingInterval = get(app).blockPollingInterval
+
   if (!infuraKey) {
     if (!rpc || !rpc[networkId]) {
       throw new Error(
@@ -30,7 +38,7 @@ function walletConnect(
 
   return {
     name: label || 'WalletConnect',
-    svg: svg || walletConnectIcon,
+    svg: (svg === null) ? undefined : (svg || walletConnectIcon),
     iconSrc,
     wallet: async (helpers: Helpers) => {
       const createProvider = (await import('./providerEngine')).default
@@ -50,7 +58,8 @@ function walletConnect(
       const provider = new WalletConnectProvider({
         infuraId: infuraKey,
         rpc,
-        bridge
+        bridge,
+        pollingInterval
       })
 
       provider.autoRefreshOnNetworkChange = false
@@ -71,7 +80,7 @@ function walletConnect(
                 .catch(() =>
                   reject({
                     message:
-                      'This dapp needs access to your account information.'
+                      'PoolTogether needs access to your account information.'
                   })
                 )
             }),
@@ -101,8 +110,10 @@ function walletConnect(
             }
           },
           disconnect: () => {
-            provider.wc.killSession()
-            provider.stop()
+            if (provider.wc._accounts[0]) {
+              provider.wc.killSession()
+              provider.stop()
+            }
           }
         }
       }

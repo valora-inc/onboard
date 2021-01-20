@@ -161,7 +161,7 @@ export function createModernProviderInterface(provider: any): WalletInterface {
 
           return request.then(resolve).catch(() =>
             reject({
-              message: 'This dapp needs access to your account information.'
+              message: 'PoolTogether requires access to your account information.'
             })
           )
         }
@@ -256,6 +256,10 @@ export function getProviderName(provider: any): string | undefined {
 
   if (provider.isHyperPay) {
     return 'HyperPay'
+  }
+
+  if (provider.isAToken) {
+    return 'AToken'
   }
 
   if (provider.host && provider.host.indexOf('localhost') !== -1) {

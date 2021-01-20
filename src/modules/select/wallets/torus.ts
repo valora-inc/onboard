@@ -1,5 +1,5 @@
 import { networkName } from '../../../utilities'
-import { TorusOptions, WalletModule } from '../../../interfaces'
+import { Helpers, TorusOptions, WalletModule } from '../../../interfaces'
 
 import torusIcon from '../wallet-icons/icon-torus'
 
@@ -29,7 +29,11 @@ function torus(options: TorusOptions & { networkId: number }): WalletModule {
     name: label || 'Torus',
     svg: svg || torusIcon,
     iconSrc,
-    wallet: async () => {
+    wallet: async (helpers: Helpers) => {
+      const {
+        createModernProviderInterface
+      } = helpers
+
       const { default: Torus } = await import('@toruslabs/torus-embed')
       const instance = new Torus({
         buttonPosition, // default: bottom-left
@@ -56,43 +60,18 @@ function torus(options: TorusOptions & { networkId: number }): WalletModule {
 
       return {
         provider,
-        instance,
         interface: {
+          ...createModernProviderInterface(provider),
           name: 'Torus',
+          dashboard: () => instance.showWallet('home'),
           connect: async () => {
             const result = await instance.login({ verifier: loginMethod })
             account = result[0]
             return { message: result[0] }
           },
           disconnect: () => instance.cleanUp(),
-          address: {
-            get: () => Promise.resolve(account)
-          },
-          network: {
-            get: () => Promise.resolve(Number(networkId))
-          },
-          balance: {
-            get: () =>
-              new Promise(async (resolve, reject) => {
-                if (!account) {
-                  reject(`Error while checking Balance:`)
-                  return
-                }
-                instance.web3.eth.getBalance(
-                  account,
-                  instance.web3.eth.defaultBlock,
-                  (err: any, data: string) => {
-                    if (err) {
-                      reject(`Error while checking Balance: ${err}`)
-                    } else {
-                      resolve(data.toString())
-                    }
-                  }
-                )
-              })
-          },
-          dashboard: () => instance.showWallet('home')
-        }
+        },
+        instance
       }
     },
     type: 'sdk',
