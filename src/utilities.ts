@@ -2,6 +2,8 @@ import bowser from 'bowser'
 import BigNumber from 'bignumber.js'
 
 import { WalletInterface } from './interfaces'
+import { app } from './stores'
+import { get } from 'svelte/store'
 
 export function getNetwork(provider: any): Promise<number | any> {
   return new Promise((resolve, reject) => {
@@ -148,24 +150,23 @@ export function createModernProviderInterface(provider: any): WalletInterface {
     balance: {
       get: () => getBalance(provider)
     },
-    connect: () =>
-      new Promise(
-        (resolve: () => void, reject: (err: { message: string }) => void) => {
-          const request = provider.request
-            ? getAddress(provider).then((address: string) => {
-                return address
-                  ? address
-                  : provider.request({ method: 'eth_requestAccounts' })
-              })
-            : provider.enable()
-
-          return request.then(resolve).catch(() =>
-            reject({
-              message: 'PoolTogether requires access to your account information.'
-            })
-          )
+    connect: async () => {
+      try {
+        if (provider.request) {
+          const result = await provider.request({
+            method: 'eth_requestAccounts'
+          })
+          return result
+        } else {
+          const result = await provider.enable()
+          return result
         }
-      ),
+      } catch (e) {
+        throw {
+          message: 'This dapp requires access to your account information.'
+        }
+      }
+    },
     name: getProviderName(provider)
   }
 }
@@ -193,7 +194,7 @@ export function getProviderName(provider: any): string | undefined {
   }
   if (provider.isDcentWallet) {
     return 'D\'CENT'
-  }  
+  }
   if (provider.isTokenPocket) {
     return 'TokenPocket'
   }
@@ -262,6 +263,10 @@ export function getProviderName(provider: any): string | undefined {
     return 'AToken'
   }
 
+  if (provider.isLiquality) {
+    return 'Liquality'
+  }
+
   if (provider.host && provider.host.indexOf('localhost') !== -1) {
     return 'localhost'
   }
@@ -297,7 +302,7 @@ export function networkName(id: number): string {
     case 100:
       return 'xdai'
     default:
-      return 'local'
+      return get(app).networkName || 'local'
   }
 }
 

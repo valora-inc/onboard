@@ -68,6 +68,7 @@ export default {
     'trezor-connect',
     'ethereumjs-tx',
     'ethereumjs-util',
+    'eth-lattice-keyring',
     'hdkey',
     '@ledgerhq/hw-transport-u2f',
     '@ledgerhq/hw-app-eth',
@@ -79,6 +80,7 @@ export default {
     'web3-provider-engine/subproviders/hooked-wallet',
     'web3-provider-engine/subproviders/rpc',
     'web3-provider-engine/subproviders/subscriptions',
-    'web3-provider-engine/subproviders/filters'
+    'web3-provider-engine/subproviders/filters',
+    'eth-provider'
   ]
 }

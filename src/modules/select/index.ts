@@ -18,7 +18,8 @@ const mobileDefaultWalletNames = [
   'tokenpocket',
   'dcent',
   'atoken',
-  'web3Wallet'
+  'web3Wallet',
+  'liquality'
 ]
 
 function select(
@@ -133,6 +134,10 @@ function getModule(
       return import('./wallets/dcent')
     case 'atoken':
       return import('./wallets/atoken')
+    case 'liquality':
+      return import('./wallets/liquality')
+    case 'frame':
+      return import('./wallets/frame')
     default:
       throw new Error(`${name} is not a valid walletName.`)
   }

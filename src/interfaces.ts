@@ -1,6 +1,7 @@
 export interface Initialization {
   dappId?: string
   networkId: number
+  networkName?: string
   subscriptions?: Subscriptions
   walletSelect?: WalletSelectModuleOptions
   walletCheck?: Array<WalletCheckModule | WalletCheckInit>
@@ -274,8 +275,8 @@ interface LocaleLinks<T> {
   ja?: T
   ko?: T
   de?: T
-  zh?: T,
-  es?: T,
+  zh?: T
+  es?: T
 }
 
 interface ThemeParams {
@@ -307,7 +308,13 @@ export interface TorusOptions extends CommonWalletOptions {
   buttonPosition?: 'top-left' | 'top-right' | 'bottom-right' | 'bottom-left'
   modalZIndex?: number
   apiKey?: string
-  buildEnv?: 'production' | 'development' | 'binance' | 'testing' | 'lrc' | 'beta'
+  buildEnv?:
+    | 'production'
+    | 'development'
+    | 'binance'
+    | 'testing'
+    | 'lrc'
+    | 'beta'
   enableLogging?: boolean
   enabledVerifiers?: VerifierStatus
   loginConfig?: LoginConfig
@@ -458,6 +465,7 @@ export type OS = {
 export interface AppState {
   dappId: string
   networkId: number
+  networkName: string
   version: string
   mobileDevice: boolean
   os: OS
