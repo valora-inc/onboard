@@ -48,9 +48,9 @@
     margin-top: 1.25em;
   }
 
-  ::-webkit-scrollbar {
+  /* ::-webkit-scrollbar {
     display: none;
-  }
+  } */
 
   @media only screen and (max-width: 450px) {
     ul li {
