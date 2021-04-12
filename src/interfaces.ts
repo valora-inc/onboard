@@ -183,6 +183,7 @@ export interface WalletConnectOptions extends CommonWalletOptions {
     [key: string]: string
   }
   bridge: string
+  mobile?: boolean
 }
 
 export interface TrezorOptions extends CommonWalletOptions {
@@ -365,7 +366,7 @@ export type AllWalletInitOptions = CommonWalletOptions &
   AuthereumOptions &
   LedgerOptions &
   WalletLinkOptions &
-  InjectedWithBalanceOptions & { networkId: number }
+  InjectedWithBalanceOptions & { networkId: number } & { isMobile: boolean }
 
 export interface WalletCheckCustomOptions {
   heading?: string

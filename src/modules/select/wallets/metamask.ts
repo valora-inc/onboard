@@ -1,11 +1,13 @@
-import { extensionInstallMessage } from '../content'
+import { extensionInstallMessage, mobileWalletInstallMessage } from '../content'
 import { WalletModule, Helpers, CommonWalletOptions } from '../../../interfaces'
 
 import metamaskIcon from '../wallet-icons/icon-metamask.png'
 import metamaskIcon2x from '../wallet-icons/icon-metamask@2x.png'
 
-function metamask(options: CommonWalletOptions): WalletModule {
-  const { preferred, label, iconSrc, svg } = options
+function metamask(
+  options: CommonWalletOptions & { isMobile: boolean }
+): WalletModule {
+  const { preferred, label, iconSrc, svg, isMobile } = options
 
   return {
     name: label || 'MetaMask',
@@ -35,7 +37,9 @@ function metamask(options: CommonWalletOptions): WalletModule {
     },
     type: 'injected',
     link: `https://metamask.app.link/dapp/${window.location.host}`,
-    installMessage: extensionInstallMessage,
+    installMessage: isMobile
+      ? mobileWalletInstallMessage
+      : extensionInstallMessage,
     desktop: true,
     mobile: true,
     preferred

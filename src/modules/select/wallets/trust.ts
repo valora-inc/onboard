@@ -5,14 +5,15 @@ import {
   InjectedWithBalanceOptions
 } from '../../../interfaces'
 
-import trustIcon from '../wallet-icons/icon-trust'
+import trustWalletIcon from '../wallet-icons/icon-trust-wallet'
+// import trustIcon from '../wallet-icons/icon-trust'
 
 function trust(options: InjectedWithBalanceOptions): WalletModule {
   const { preferred, label, iconSrc, svg, rpcUrl } = options
 
   return {
-    name: label || 'Trust',
-    svg: svg || trustIcon,
+    name: label || 'Trust Wallet',
+    svg: svg || trustWalletIcon,
     iconSrc,
     wallet: async (helpers: Helpers) => {
       const { getProviderName, getAddress, getNetwork, getBalance } = helpers

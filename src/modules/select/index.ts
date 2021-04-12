@@ -1,9 +1,19 @@
-import { WalletModule, WalletInitOptions } from '../../interfaces'
+import {
+  WalletModule,
+  WalletInitOptions,
+  AllWalletInitOptions
+} from '../../interfaces'
 import { isWalletInit } from '../../validation'
 
 // wallets that qualify for default wallets need to have no
 // init parameters that are required for full functionality
-const desktopDefaultWalletNames = ['metamask', 'authereum', 'torus', 'opera', 'web3Wallet']
+const desktopDefaultWalletNames = [
+  'metamask',
+  'authereum',
+  'torus',
+  'opera',
+  'web3Wallet'
+]
 
 const mobileDefaultWalletNames = [
   'metamask',
@@ -19,7 +29,8 @@ const mobileDefaultWalletNames = [
   'dcent',
   'atoken',
   'web3Wallet',
-  'liquality'
+  'liquality',
+  'ownbit'
 ]
 
 function select(
@@ -39,7 +50,7 @@ function select(
 
           try {
             return getModule(walletName).then((m: any) =>
-              m.default({ ...initParams, networkId })
+              m.default({ ...initParams, networkId, isMobile })
             )
           } catch (error) {
             if (error.name === 'DeprecatedWalletError') {
@@ -65,7 +76,7 @@ function select(
 function getModule(
   name: string
 ): Promise<{
-  default: (options: any) => WalletModule
+  default: (options: AllWalletInitOptions) => WalletModule
 }> {
   switch (name) {
     // Deprecated wallets
@@ -112,6 +123,8 @@ function getModule(
       return import('./wallets/trezor')
     case 'lattice':
       return import('./wallets/lattice')
+    case 'cobovault':
+      return import('./wallets/cobovault')
     case 'ledger':
       return import('./wallets/ledger')
     case 'walletLink':
@@ -138,6 +151,8 @@ function getModule(
       return import('./wallets/liquality')
     case 'frame':
       return import('./wallets/frame')
+    case 'ownbit':
+      return import('./wallets/ownbit')
     default:
       throw new Error(`${name} is not a valid walletName.`)
   }

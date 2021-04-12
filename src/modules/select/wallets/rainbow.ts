@@ -1,7 +1,4 @@
-import {
-  WalletConnectOptions,
-  WalletModule,
-} from '../../../interfaces'
+import { WalletConnectOptions, WalletModule } from '../../../interfaces'
 
 import rainbowIcon from '../wallet-icons/icon-rainbow.png'
 

@@ -1,7 +1,4 @@
-import {
-  WalletConnectOptions,
-  WalletModule,
-} from '../../../interfaces'
+import { WalletConnectOptions, WalletModule } from '../../../interfaces'
 
 import trustWalletIcon from '../wallet-icons/icon-trust-wallet'
 
@@ -13,6 +10,7 @@ function trustWallet(
   return walletConnect({
     label: 'Trust Wallet',
     svg: trustWalletIcon,
+    mobile: false,
     ...options
   })
 }

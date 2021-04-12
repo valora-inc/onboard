@@ -8,9 +8,7 @@ import walletConnectIcon from '../wallet-icons/icon-wallet-connect'
 
 import { get } from 'svelte/store'
 
-import {
-  app,
-} from '../../../stores'
+import { app } from '../../../stores'
 
 function walletConnect(
   options: WalletConnectOptions & { networkId: number }
@@ -26,6 +24,7 @@ function walletConnect(
     networkId
   } = options
 
+  const mobile = options.mobile ?? true
   const pollingInterval = get(app).blockPollingInterval
 
   if (!infuraKey) {
@@ -38,7 +37,7 @@ function walletConnect(
 
   return {
     name: label || 'WalletConnect',
-    svg: (svg === null) ? undefined : (svg || walletConnectIcon),
+    svg: svg === null ? undefined : svg || walletConnectIcon,
     iconSrc,
     wallet: async (helpers: Helpers) => {
       const createProvider = (await import('./providerEngine')).default
@@ -120,7 +119,7 @@ function walletConnect(
     },
     type: 'sdk',
     desktop: true,
-    mobile: true,
+    mobile,
     preferred
   }
 }
