@@ -17,8 +17,8 @@ function walletLink(
   } = options
 
   return {
-    name: label || 'Coinbase WalletLink',
-    // svg: coinbaseIcon,
+    name: label || 'Coinbase Wallet',
+    // svg: coinbaseIcon || coinbaseIcon,
     // iconSrc,
     iconSrc: iconSrc || coinbaseIcon,
     iconSrcSet: iconSrc || coinbaseIcon,

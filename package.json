@@ -1,6 +1,6 @@
 {
   "name": "@pooltogether/bnc-onboard",
-  "version": "1.22.1",
+  "version": "1.25.0",
   "description": "Onboard users to web3 by allowing them to select a wallet, get that wallet ready to transact and have access to synced wallet state.",
   "keywords": [
     "ethereum",
@@ -20,6 +20,14 @@
     "url": "https://github.com/blocknative/onboard"
   },
   "license": "MIT",
+  "scripts": {
+    "build": "rimraf dist && rollup -c && babel dist/cjs --out-dir dist/cjs && babel dist/esm --out-dir dist/esm",
+    "test": "echo \"TBD\" && exit 0",
+    "prepare": "npm run build",
+    "lint": "eslint 'src/**/*.ts' && prettier --check {'src/**/*.ts','src/**/*.svelte'}",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "format": "prettier --write {'src/**/*.ts','src/**/*.svelte'}"
+  },
   "devDependencies": {
     "@babel/cli": "^7.7.0",
     "@babel/core": "^7.5.5",
@@ -50,10 +58,10 @@
     "@ledgerhq/hw-transport-u2f": "^5.36.0-deprecated",
     "@portis/web3": "2.0.0-beta.59",
     "@toruslabs/torus-embed": "^1.9.13",
-    "@walletconnect/web3-provider": "^1.4.0",
+    "@walletconnect/web3-provider": "^1.4.1",
     "authereum": "^0.1.14",
     "bignumber.js": "^9.0.1",
-    "bnc-sdk": "^3.1.1",
+    "bnc-sdk": "^3.2.0",
     "bowser": "^2.11.0",
     "eth-lattice-keyring": "^0.2.12",
     "eth-provider": "^0.6.1",
@@ -61,14 +69,10 @@
     "ethereumjs-util": "^7.0.9",
     "fortmatic": "2.2.1",
     "hdkey": "^2.0.1",
+    "prettier-plugin-svelte": "^2.2.0",
     "regenerator-runtime": "^0.13.7",
     "trezor-connect": "^8.1.25",
-    "walletlink": "^2.0.3",
+    "walletlink": "^2.1.0",
     "web3-provider-engine": "^16.0.1"
-  },
-  "scripts": {
-    "build": "rimraf dist && rollup -c && babel dist/cjs --out-dir dist/cjs && babel dist/esm --out-dir dist/esm",
-    "test": "echo \"TBD\" && exit 0",
-    "prepare": "npm run build"
   }
 }

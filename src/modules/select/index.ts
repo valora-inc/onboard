@@ -12,12 +12,13 @@ const desktopDefaultWalletNames = [
   'authereum',
   'torus',
   'opera',
-  'web3Wallet'
+  'web3Wallet',
+  'liquality'
 ]
+
 
 const mobileDefaultWalletNames = [
   'metamask',
-  'authereum',
   'coinbase',
   'trust',
   'torus',
@@ -30,7 +31,9 @@ const mobileDefaultWalletNames = [
   'atoken',
   'web3Wallet',
   'liquality',
-  'ownbit'
+  'alphawallet',
+  'ownbit',
+  'authereum'
 ]
 
 function select(
@@ -151,6 +154,8 @@ function getModule(
       return import('./wallets/liquality')
     case 'frame':
       return import('./wallets/frame')
+    case 'alphawallet':
+      return import('./wallets/alphawallet')
     case 'ownbit':
       return import('./wallets/ownbit')
     default:
