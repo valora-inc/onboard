@@ -37,7 +37,7 @@ function walletLink(
       return {
         provider,
         interface: {
-          name: 'WalletConnect',
+          name: 'Coinbase Wallet',
           connect: () =>
             new Promise((resolve, reject) => {
               provider

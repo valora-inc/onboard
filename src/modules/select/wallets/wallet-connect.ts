@@ -13,16 +13,8 @@ import { app } from '../../../stores'
 function walletConnect(
   options: WalletConnectOptions & { networkId: number }
 ): WalletModule {
-  const {
-    infuraKey,
-    rpc,
-    bridge,
-    preferred,
-    label,
-    iconSrc,
-    svg,
-    networkId
-  } = options
+  const { infuraKey, rpc, bridge, preferred, label, iconSrc, svg, networkId } =
+    options
 
   const mobile = options.mobile ?? true
   const pollingInterval = get(app).blockPollingInterval
@@ -53,6 +45,12 @@ function walletConnect(
           : `https://${networkName(networkId)}.infura.io/v3/${infuraKey}`
 
       const balanceProvider = createProvider({ rpcUrl })
+
+      if (infuraKey && rpc) {
+        throw new Error(
+          'WalletConnect requires  an Infura ID or a custom RPC object but not both.'
+        )
+      }
 
       const provider = new WalletConnectProvider({
         infuraId: infuraKey,

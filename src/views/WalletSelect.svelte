@@ -34,7 +34,7 @@
   export let module: WalletSelectModule = {
     heading: '',
     description: '',
-    wallets: [],
+    wallets: Promise.resolve([]),
     agreement: undefined
   }
 
@@ -46,7 +46,7 @@
   let selectedWalletModule: WalletModule | null
 
   const { mobileDevice, os } = get(app)
-  let { heading, description, explanation, wallets, agreement } = module
+  let { heading, description, explanation, agreement } = module
 
   const { termsUrl, privacyUrl, version } = agreement || {}
   const {
@@ -63,7 +63,7 @@
 
   let walletsDisabled: boolean = showTermsOfService
 
-  let agreed: boolean
+  let agreed: boolean | undefined = undefined
 
   $: if (agreed) {
     localStorage.setItem(
@@ -109,7 +109,7 @@
 
   async function renderWalletSelect() {
     const appState = get(app)
-    wallets = await wallets
+    const wallets = await module.wallets
 
     const deviceWallets = (wallets as WalletModule[])
       .filter(wallet => wallet[mobileDevice ? 'mobile' : 'desktop'])
@@ -223,14 +223,19 @@
 
       return selectedWalletInterface
     })
-
+    const { name, type, svg, iconSrc, iconSrcSet } = module
     wallet.set({
       provider,
       instance,
       dashboard: selectedWalletInterface.dashboard,
-      name: module.name,
+      name,
       connect: selectedWalletInterface.connect,
-      type: module.type
+      type,
+      icons: {
+        svg,
+        iconSrc,
+        iconSrcSet
+      }
     })
 
     finish({ completed: true })
@@ -323,7 +328,9 @@
           What is a wallet?
         </span>
         {#if mobileDevice}
-          <Button onclick={() => finish({ completed: false })}>Dismiss</Button>
+          <Button cta={false} onclick={() => finish({ completed: false })}
+            >Dismiss</Button
+          >
         {/if}
       </div>
       {#if showWalletDefinition}

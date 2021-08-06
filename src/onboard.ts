@@ -1,6 +1,6 @@
 import 'regenerator-runtime/runtime'
 
-import { get } from 'svelte/store'
+import { get, derived } from 'svelte/store'
 
 import Onboard from './views/Onboard.svelte'
 
@@ -16,8 +16,8 @@ import {
   initializeStores
 } from './stores'
 
-import { getDeviceInfo } from './utilities'
-import { validateInit, validateConfig } from './validation'
+import { getDeviceInfo, getEns } from './utilities'
+import { validateInit, validateConfig, isWalletInit } from './validation'
 
 import { version } from '../package.json'
 
@@ -27,16 +27,46 @@ import {
   API,
   ConfigOptions,
   UserState,
-  Wallet
+  Wallet,
+  WalletInitOptions,
+  Ens
 } from './interfaces'
 
 import initializeModules from './modules'
+import { closeSocketConnection } from './services'
 
 let onboard: any
 
 function init(initialization: Initialization): API {
+  if (typeof window === 'undefined') {
+    console.warn(
+      'Onboard.js must be run in a browser environment. If you are utilizing server side rendering you can ignore this warning.'
+    )
+
+    const stubbedAPI = {
+      walletSelect: () => Promise.resolve(false),
+      walletCheck: () => Promise.resolve(false),
+      walletReset: () => {},
+      config: () => {},
+      getState: () => get(state),
+      accountSelect: () => Promise.resolve(false)
+    }
+
+    return stubbedAPI
+  }
+
   if (onboard) {
-    console.warn('onboard has already been initialized')
+    console.warn(
+      'Initializing Onboard and destroying previously initialized instance.'
+    )
+
+    // close WebSocket connection
+    closeSocketConnection()
+
+    // reset the wallet state
+    resetWalletState()
+
+    // destroy svelte instance and remove from DOM
     onboard.$destroy()
   }
 
@@ -101,7 +131,8 @@ function init(initialization: Initialization): API {
     target: document.body,
     props: {
       walletSelectModule: initializedModules.walletSelect,
-      walletSelect
+      walletSelect,
+      walletCheck
     }
   })
 
@@ -111,6 +142,21 @@ function init(initialization: Initialization): API {
       address.subscribe((address: string | null) => {
         if (address !== null) {
           subscriptions.address && subscriptions.address(address)
+        }
+      })
+    }
+
+    if (subscriptions.ens) {
+      derived([address, wallet], ([$address, $wallet], set) => {
+        if ($address && $wallet && $wallet.provider) {
+          getEns($wallet.provider, $address).then(set)
+        } else {
+          // Wallet not selected or reset
+          set(undefined)
+        }
+      }).subscribe(ens => {
+        if (ens !== null) {
+          subscriptions.ens && subscriptions.ens(ens as Ens)
         }
       })
     }
@@ -186,9 +232,11 @@ function init(initialization: Initialization): API {
         const {
           walletCheckInProgress,
           walletCheckCompleted,
-          walletCheckDisplayedUI
+          walletCheckDisplayedUI,
+          switchingWallets
         } = store
-        if (walletCheckInProgress === false) {
+
+        if (!switchingWallets && walletCheckInProgress === false) {
           appUnsubscribe()
           walletCheckDisplayedUI
             ? setTimeout(() => {
@@ -239,6 +287,23 @@ function init(initialization: Initialization): API {
 
   function getState(): UserState {
     return get(state)
+  }
+
+  // Find the Gnosis wallet from the wallet init options. Ignore it
+  // if it is a wallet module. We need to get the wallet init first
+  // in order to determine the wallet name: `walletName` or `label`.
+  const {
+    // If label is undefined set it to 'Gnosis Safe'
+    label: gnosisWalletName = 'Gnosis Safe'
+  } = (initialization.walletSelect?.wallets?.find(
+    wallet => isWalletInit(wallet) && wallet.walletName === 'gnosis'
+  ) || {}) as WalletInitOptions
+
+  if (gnosisWalletName) {
+    import('./modules/select/wallets/gnosis').then(
+      ({ checkGnosisSafeContext }) =>
+        checkGnosisSafeContext(() => walletSelect(gnosisWalletName))
+    )
   }
 
   return {

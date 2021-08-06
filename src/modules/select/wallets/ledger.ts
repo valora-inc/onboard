@@ -1,4 +1,9 @@
-import { LedgerOptions, WalletModule, Helpers } from '../../../interfaces'
+import {
+  LedgerOptions,
+  WalletModule,
+  HardwareWalletCustomNetwork,
+  Helpers
+} from '../../../interfaces'
 
 import ledgerIcon from '../wallet-icons/icon-ledger'
 
@@ -13,7 +18,8 @@ function ledger(options: LedgerOptions & { networkId: number }): WalletModule {
     preferred,
     label,
     iconSrc,
-    svg
+    svg,
+    customNetwork
   } = options
 
   return {
@@ -29,7 +35,8 @@ function ledger(options: LedgerOptions & { networkId: number }): WalletModule {
         LedgerTransport,
         BigNumber,
         networkName,
-        resetWalletState
+        resetWalletState,
+        customNetwork
       })
 
       return {
@@ -61,25 +68,45 @@ function ledger(options: LedgerOptions & { networkId: number }): WalletModule {
   }
 }
 
-async function ledgerProvider(options: {
+interface LedgerProviderOptions {
   networkId: number
   rpcUrl: string
   LedgerTransport: any
   BigNumber: any
+  customNetwork?: HardwareWalletCustomNetwork
   networkName: (id: number) => string
   resetWalletState: (options?: {
     disconnected: boolean
     walletName: string
   }) => void
-}) {
+}
+
+async function ledgerProvider(options: LedgerProviderOptions) {
   const { default: createProvider } = await import('./providerEngine')
   const { generateAddresses, isValidPath } = await import('./hd-wallet')
-  const { default: TransportU2F } = await import('@ledgerhq/hw-transport-u2f')
   const { default: Eth } = await import('@ledgerhq/hw-app-eth')
 
-  const EthereumTx = await import('ethereumjs-tx')
+  const { Transaction } = await import('@ethereumjs/tx')
+  const { default: Common } = await import('@ethereumjs/common')
   const ethUtil = await import('ethereumjs-util')
-  const buffer = await import('buffer')
+  const { TypedDataUtils } = await import('eth-sig-util')
+
+  const domainHash = (message: any) => {
+    return TypedDataUtils.hashStruct(
+      'EIP712Domain',
+      message.domain,
+      message.types,
+      true
+    )
+  }
+  const messageHash = (message: any) => {
+    return TypedDataUtils.hashStruct(
+      message.primaryType,
+      message.message,
+      message.types,
+      true
+    )
+  }
 
   const {
     networkId,
@@ -87,7 +114,8 @@ async function ledgerProvider(options: {
     LedgerTransport,
     BigNumber,
     networkName,
-    resetWalletState
+    resetWalletState,
+    customNetwork
   } = options
 
   let dPath = ''
@@ -130,6 +158,11 @@ async function ledgerProvider(options: {
         .then((res: string) => callback(null, res))
         .catch(err => callback(err, null))
     },
+    signTypedMessage: (messageData: any, callback: any) => {
+      signTypedMessage(messageData)
+        .then((res: string) => callback(null, res))
+        .catch(err => callback(err, null))
+    },
     rpcUrl
   })
 
@@ -147,10 +180,12 @@ async function ledgerProvider(options: {
   provider.isCustomPath = isCustomPath
 
   let transport: any
+  let transportSubscription: any
   let eth: any
 
   function disconnect() {
-    transport && transport.close()
+    transport?.close()
+    transportSubscription?.unsubscribe()
     provider.stop()
     resetWalletState({ disconnected: true, walletName: 'Ledger' })
   }
@@ -185,12 +220,6 @@ async function ledgerProvider(options: {
 
   async function createTransport() {
     try {
-      transport = LedgerTransport
-        ? await LedgerTransport.create()
-        : await TransportU2F.create()
-
-      eth = new Eth(transport)
-
       const observer = {
         next: (event: any) => {
           if (event.type === 'remove') {
@@ -201,10 +230,20 @@ async function ledgerProvider(options: {
         complete: () => {}
       }
 
-      LedgerTransport
-        ? LedgerTransport.listen(observer)
-        : TransportU2F.listen(observer)
+      // Get the Transport class
+      let Transport = LedgerTransport
+      if (!Transport) {
+        Transport = (await supportsWebUSB())
+          ? (await import('@ledgerhq/hw-transport-webusb')).default
+          : (await import('@ledgerhq/hw-transport-u2f')).default
+      }
+      transport = await Transport.create()
+
+      eth = new Eth(transport)
+
+      Transport.listen(observer)
     } catch (error) {
+      console.error(error)
       throw new Error('Error connecting to Ledger wallet')
     }
   }
@@ -262,6 +301,7 @@ async function ledgerProvider(options: {
 
       return account
     } catch (error) {
+      console.error({ error })
       throw new Error('There was a problem accessing your Ledger accounts.')
     }
   }
@@ -363,24 +403,36 @@ async function ledgerProvider(options: {
 
   async function signTransaction(transactionData: any) {
     const path = [...addressToPath.values()][0]
-
+    const { BN, toBuffer } = ethUtil
+    const common = new Common({
+      chain: customNetwork || networkName(networkId)
+    })
     try {
-      const transaction = new EthereumTx.Transaction(transactionData, {
-        chain: networkName(networkId)
-      })
-
-      transaction.raw[6] = buffer.Buffer.from([networkId]) // v
-      transaction.raw[7] = buffer.Buffer.from([]) // r
-      transaction.raw[8] = buffer.Buffer.from([]) // s
+      const transaction = Transaction.fromTxData(
+        {
+          ...transactionData,
+          gasLimit: transactionData.gas ?? transactionData.gasLimit
+        },
+        { common, freeze: false }
+      )
+      transaction.v = new BN(toBuffer(networkId))
+      transaction.r = transaction.s = new BN(toBuffer(0))
 
       const ledgerResult = await eth.signTransaction(
         path,
         transaction.serialize().toString('hex')
       )
-
-      transaction.v = buffer.Buffer.from(ledgerResult.v, 'hex')
-      transaction.r = buffer.Buffer.from(ledgerResult.r, 'hex')
-      transaction.s = buffer.Buffer.from(ledgerResult.s, 'hex')
+      let v = ledgerResult.v.toString(16)
+      // EIP155 support. check/recalc signature v value.
+      const rv = parseInt(v, 16)
+      let cv = networkId * 2 + 35
+      if (rv !== cv && (rv & cv) !== rv) {
+        cv += 1 // add signature v bit.
+      }
+      v = cv.toString(16)
+      transaction.v = new BN(toBuffer(`0x${v}`))
+      transaction.r = new BN(toBuffer(`0x${ledgerResult.r}`))
+      transaction.s = new BN(toBuffer(`0x${ledgerResult.s}`))
 
       return `0x${transaction.serialize().toString('hex')}`
     } catch (error) {
@@ -406,7 +458,37 @@ async function ledgerProvider(options: {
       })
   }
 
+  async function signTypedMessage({ data }: { data: any }) {
+    if (addressToPath.size === 0) {
+      await enable()
+    }
+
+    const path = [...addressToPath.values()][0]
+
+    return eth
+      .signEIP712HashedMessage(
+        path,
+        ethUtil.bufferToHex(domainHash(data)),
+        ethUtil.bufferToHex(messageHash(data))
+      )
+      .then((result: any) => {
+        let v = (result['v'] - 27).toString(16)
+        if (v.length < 2) {
+          v = '0' + v
+        }
+
+        return `0x${result['r']}${result['s']}${v}`
+      })
+  }
+
   return provider
 }
+type Nav = Navigator & { usb: { getDevices(): void } }
+const supportsWebUSB = (): Promise<boolean> =>
+  Promise.resolve(
+    !!navigator &&
+      !!(navigator as Nav).usb &&
+      typeof (navigator as Nav).usb.getDevices === 'function'
+  )
 
 export default ledger

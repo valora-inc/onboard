@@ -4,20 +4,23 @@ import {
   AllWalletInitOptions
 } from '../../interfaces'
 import { isWalletInit } from '../../validation'
+import { getProviderName } from '../../utilities'
 
 // wallets that qualify for default wallets need to have no
 // init parameters that are required for full functionality
 const desktopDefaultWalletNames = [
+  // 'authereum',
+  'detectedwallet',
   'metamask',
-  'authereum',
+  'frame',
   'torus',
   'opera',
   'web3Wallet',
   'liquality'
 ]
 
-
 const mobileDefaultWalletNames = [
+  'detectedwallet',
   'metamask',
   'coinbase',
   'trust',
@@ -33,8 +36,13 @@ const mobileDefaultWalletNames = [
   'liquality',
   'alphawallet',
   'ownbit',
-  'authereum'
+  'bitpie',
+  'authereum',
+  'tp'
 ]
+
+const injectedWalletDetected = () =>
+  window.ethereum && getProviderName(window.ethereum) === undefined
 
 function select(
   wallets: Array<WalletInitOptions | WalletModule> | undefined,
@@ -46,11 +54,23 @@ function select(
     : desktopDefaultWalletNames
 
   if (wallets) {
+    // For backwards compatibility if a user is still using 'detectedwallet' in the onboard wallet select array
+    // it will be filtered out so there are no duplicates
+    wallets = wallets.filter(
+      wallet =>
+        'walletName' in wallet ? wallet.walletName !== 'detectedwallet' : true // It is not a WalletInitOption but rather a WalletModule so let it through
+    )
+
+    // If we detect an injected wallet then place the detected wallet
+    // at the beginning of the list e.g. the of the wallet select modal
+    if (injectedWalletDetected()) {
+      wallets.unshift({ walletName: 'detectedwallet' })
+    }
     return Promise.all(
       wallets.map(wallet => {
+        // If this is a wallet init object then load the built-in wallet module
         if (isWalletInit(wallet)) {
           const { walletName, ...initParams } = wallet
-
           try {
             return getModule(walletName).then((m: any) =>
               m.default({ ...initParams, networkId, isMobile })
@@ -64,21 +84,26 @@ function select(
           }
         }
 
+        // This is a custom wallet module so just return it
         return Promise.resolve(wallet)
       })
     )
   }
 
   return Promise.all(
-    defaultWalletNames.map(walletName =>
-      getModule(walletName).then((m: any) => m.default({ networkId }))
-    )
+    defaultWalletNames
+      // Include the detected wallet only if an injected wallet is detected
+      .filter(
+        walletName =>
+          walletName !== 'detectedwallet' || injectedWalletDetected()
+      )
+      .map(walletName =>
+        getModule(walletName).then((m: any) => m.default({ networkId }))
+      )
   )
 }
 
-function getModule(
-  name: string
-): Promise<{
+function getModule(name: string): Promise<{
   default: (options: AllWalletInitOptions) => WalletModule
 }> {
   switch (name) {
@@ -126,6 +151,10 @@ function getModule(
       return import('./wallets/trezor')
     case 'lattice':
       return import('./wallets/lattice')
+    case 'keystone':
+      return import('./wallets/keystone')
+    case 'cobovault':
+      return import('./wallets/cobovault')
     case 'ledger':
       return import('./wallets/ledger')
     case 'walletLink':
@@ -152,10 +181,22 @@ function getModule(
       return import('./wallets/liquality')
     case 'frame':
       return import('./wallets/frame')
+    case 'xdefi':
+      return import('./wallets/xdefi')
     case 'alphawallet':
       return import('./wallets/alphawallet')
     case 'ownbit':
       return import('./wallets/ownbit')
+    case 'keepkey':
+      return import('./wallets/keepkey/')
+    case 'bitpie':
+      return import('./wallets/bitpie')
+    case 'gnosis':
+      return import('./wallets/gnosis')
+    case 'detectedwallet':
+      return import('./wallets/detectedwallet')
+    case 'tp':
+      return import('./wallets/tp')
     default:
       throw new Error(`${name} is not a valid walletName.`)
   }
