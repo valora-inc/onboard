@@ -41,14 +41,20 @@ function network(
         })
       }
     }
-    try {
-      await wallet?.provider?.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: '0x' + appNetworkId?.toString(16) }]
-      })
-    } catch (e) {
-      // Could not switch networks so proceed as normal through the checks
-    }
+
+    //* @notice: Commented out this block from upstream as it was causing wallet_switchEthereumChain()
+    // to fire asking you to switch to Ethereum Mainnet when trying to post a tx to Polygon
+    //
+    //
+    // try {
+    //   await wallet?.provider?.request({
+    //     method: 'wallet_switchEthereumChain',
+    //     params: [{ chainId: '0x' + appNetworkId?.toString(16) }]
+    //   })
+    // } catch (e) {
+    //   // Could not switch networks so proceed as normal through the checks
+    // }
+
     if (stateStore.network.get() != appNetworkId) {
       return undefined
       return {
