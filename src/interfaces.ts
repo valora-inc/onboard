@@ -183,6 +183,7 @@ export interface CommonWalletOptions {
   iconSrc?: string
   svg?: string | null
   networkId?: number
+  display?: { mobile?: boolean; desktop?: boolean }
 }
 
 export interface SdkWalletOptions extends CommonWalletOptions {
