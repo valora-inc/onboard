@@ -8,7 +8,8 @@ interface DerivationPaths {
 const derivationPaths: DerivationPaths = {
   Ledger: [
     { path: `m/44'/60'/0'`, label: 'Ethereum' },
-    { path: `m/44'/60'`, label: 'Ethereum Ledger Live' }
+    { path: `m/44'/60'`, label: 'Ethereum Ledger Live' },
+    { path: `m/44'/52752'/0'`, label: 'Celo' }
   ],
   Trezor: [{ path: `m/44'/60'/0'/0`, label: 'Ethereum' }],
   Lattice: [{ path: `m/44'/60'/0'/0`, label: 'Ethereum' }],
