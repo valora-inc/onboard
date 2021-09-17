@@ -47,9 +47,13 @@ function walletConnect(
       const balanceProvider = createProvider({ rpcUrl })
 
       if (infuraKey && rpc) {
-        throw new Error(
-          'WalletConnect requires  an Infura ID or a custom RPC object but not both.'
-        )
+        // Commenting out this requirement for Celo wallets where the custom rpc is needed.
+        // Note: the custom rpc will only be used if the chainId is not already in @walletconnect/utils
+        // See https://github.com/WalletConnect/walletconnect-monorepo/blob/0871582be273f8c21bb1351315d649ea47ee70b7/packages/helpers/utils/src/misc.ts#L53-L71
+        // and https://github.com/WalletConnect/walletconnect-monorepo/blob/0871582be273f8c21bb1351315d649ea47ee70b7/packages/helpers/utils/src/constants.ts#L28-L34
+        // throw new Error(
+        //   'WalletConnect requires  an Infura ID or a custom RPC object but not both.'
+        // )
       }
 
       const provider = new WalletConnectProvider({
